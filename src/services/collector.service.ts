@@ -117,7 +117,7 @@ export class CollectorService {
 
     let numberOfSpins = this.params.microroundCount;
 
-    console.log(`${numberOfSpins} microrounds will be collected in the thread ${threadNumber}`);
+    console.log(`${numberOfSpins} macro rounds will be collected in the thread ${threadNumber}`);
 
     while (numberOfSpins) {
       ++index;
@@ -152,7 +152,7 @@ export class CollectorService {
         }
       } else {
         if (index % 1000 === 0) {
-          console.log(`Thread: {${threadNumber}} => ${index} microrounds already processed -> RTP => ${rtp}% -> ${new Date().toISOString()}`);
+          console.log(`Thread: {${threadNumber}} => ${index} macro rounds already processed -> RTP => ${rtp}% -> ${new Date().toISOString()}`);
         }
       }
 
@@ -173,7 +173,7 @@ export class CollectorService {
     }
 
     console.log(`Thread: {${threadNumber}} => Number of freespins = ${freespins}`);
-    console.log(`Thread: {${threadNumber}} => Number of microrounds = ${index}`);
+    console.log(`Thread: {${threadNumber}} => Number of macro rounds = ${index}`);
     console.log(`Thread: {${threadNumber}} => RTP = ${rtp}%`);
     console.log(`Thread: {${threadNumber}} => Main RTP = ${mainRTP}%`);
     console.log(`Thread: {${threadNumber}} => FS RTP = ${fsRTP}%`);

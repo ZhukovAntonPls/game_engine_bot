@@ -15,7 +15,7 @@ const printHelp = () => {
     dedent`${chalk.bgCyan(' HELP ')}
         -g Game name [ treasures_fire ]
         -b Bet [ 1 ]
-        -n Number of microrounds [ 1000 ]
+        -n Number of macro rounds [ 1000 ]
         -f Buy feature mode [ 0 - disable, 1 - enable ]
         -t Number of threads [ 20 ]
         Example: node ./dist/index.js -g treasures_fire -b 1 -n 1000 -f 0 -t 20 -h
