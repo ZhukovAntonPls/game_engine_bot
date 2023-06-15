@@ -14,6 +14,13 @@ import promiseRetry from "@playson-dev/promise-retry";
 
 const sessionId = '1';
 const zeroBetStates = ['free_game', 'respin', 'bonus'];
+export type BetResponseExt = BetResponse & { initialState: string };
+export interface RTP {
+  totalRTP: number;
+  mainGameRTP: number;
+  freeGameRTP: number;
+  bonusGameRTP: number;
+}
 
 export class CollectorService {
   private readonly gameEngine: GameEngineAsyncClient;
@@ -45,20 +52,21 @@ export class CollectorService {
     return this.params.bet;
   }
 
-  async playSpin(request: BetResponse): Promise<BetResponse> {
+  async playSpin(request: BetResponse): Promise<BetResponseExt> {
     return promiseRetry(async (retry, attempts) => {
+      const requestContext = request?.context ? request.context : undefined;
       const betResponse = await this.gameEngine.bet({
         requestId: '1',
         gameName: this.params.gameName,
         bet: this.getBet(request).toString(),
         requestData: this.getRequestData(request),
-        context: request?.context ? request.context : undefined,
+        context: requestContext,
         partner: { partnerId: '1', wlcode: 'default' },
         gameMode: GameMode.GAME_MODE_MAIN_GAME,
       }).catch((err) => {
         console.warn('Could not process bet', err);
         return retry(new Error(('Could not process bet')));
-      });;
+      });
 
       if (betResponse.status !== Status.STATUS_OK) {
         if (betResponse.error) {
@@ -67,7 +75,12 @@ export class CollectorService {
         }
         retry(new Error('Unspecified error in the response of the beta game engine'));
       }
-      return betResponse;
+
+      const initialState = request.state && request.state !== '' ? request.state : null;
+      return {
+        ...betResponse,
+        initialState,
+      }
     },
         {
           retries: GAME_ENGINE_BET_RETRY_COUNT,
@@ -77,14 +90,20 @@ export class CollectorService {
         },)
   }
 
-  async play(threadNumber: number): Promise<number> {
-    let betResponse: BetResponse;
+  async play(threadNumber: number): Promise<RTP> {
+    let betResponse: BetResponseExt;
     let total_bet = 0;
     let total_win = 0;
     let buyFeatureCount = 0;
     let freespins = 0;
     let index = 0;
     let rtp = 0;
+    let fsWin = 0;
+    let bonusWin = 0;
+    let mainWin = 0;
+    let fsRTP = 0;
+    let bonusRTP = 0;
+    let mainRTP = 0;
 
     let numberOfSpins = this.params.microroundCount;
 
@@ -97,7 +116,21 @@ export class CollectorService {
       total_bet += +betResponse.bet;
       total_win += +betResponse.win;
 
+      if(betResponse.initialState === 'free_game') {
+        fsWin += +betResponse.win;
+        fsRTP = (fsWin / total_bet) * 100;
+      }
+      if(betResponse.initialState === 'bonus') {
+        bonusWin += +betResponse.win;
+        bonusRTP = (bonusWin / total_bet) * 100;
+      }
+      if(betResponse.initialState === 'idle') {
+        mainWin += +betResponse.win;
+        mainRTP = (mainWin / total_bet) * 100;
+      }
+
       rtp = (total_win / total_bet) * 100;
+
 
       if (this.params.buyFeatureEnabled) {
         if (buyFeatureCount % 100 === 0 && (!betResponse || betResponse?.state === 'idle')) {
@@ -128,7 +161,15 @@ export class CollectorService {
     console.log(`Thread: {${threadNumber}} => Number of freespins = ${freespins}`);
     console.log(`Thread: {${threadNumber}} => Number of microrounds = ${index}`);
     console.log(`Thread: {${threadNumber}} => RTP = ${rtp}%`);
+    console.log(`Thread: {${threadNumber}} => Main RTP = ${mainRTP}%`);
+    console.log(`Thread: {${threadNumber}} => FS RTP = ${fsRTP}%`);
+    console.log(`Thread: {${threadNumber}} => Bonus RTP = ${bonusRTP}%`);
 
-    return rtp;
+    return {
+      totalRTP: rtp,
+      mainGameRTP: mainRTP,
+      freeGameRTP: fsRTP,
+      bonusGameRTP: bonusRTP,
+    }
   }
 }
