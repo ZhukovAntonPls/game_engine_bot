@@ -84,7 +84,7 @@ export class CollectorService {
         gameRtp = +jsonData.server.rtp
       }
 
-      const initialState = request.state && request.state !== '' ? request.state : null;
+      const initialState = request?.state && request.state !== '' ? request.state : null;
       return {
         ...betResponse,
         initialState,
@@ -134,7 +134,7 @@ export class CollectorService {
         bonusWin += +betResponse.win;
         bonusRTP = (bonusWin / total_bet) * 100;
       }
-      if(betResponse.initialState === 'idle') {
+      if(betResponse.initialState === 'idle' || betResponse.initialState === null) {
         mainWin += +betResponse.win;
         mainRTP = (mainWin / total_bet) * 100;
       }
