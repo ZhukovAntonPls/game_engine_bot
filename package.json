@@ -29,7 +29,7 @@
     "@playson-dev/grpc-utils": "^3.8.0",
     "@playson-dev/redis-utils": "^2.39.0",
     "@playson-dev/xplatform-apm-tracer": "^2.3.0",
-    "@playson-dev/xplatform-game-engine-proto": "5.0.0",
+    "@playson-dev/xplatform-game-engine-proto": "6.4.0",
     "@playson-dev/xplatform-health-check-proto": "^4.0.0",
     "@playson-dev/xplatform-logger": "^1.4.0",
     "@playson-dev/promise-retry": "^2.2.0",

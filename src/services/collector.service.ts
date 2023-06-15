@@ -122,20 +122,21 @@ export class CollectorService {
     while (numberOfSpins) {
       ++index;
       betResponse = await this.playSpin(betResponse);
+      const firstMicroRound = betResponse.microRoundData[0];
 
-      total_bet += +betResponse.bet;
-      total_win += +betResponse.win;
+      total_bet += +firstMicroRound.bet;
+      total_win += +firstMicroRound.win;
 
       if(betResponse.initialState === 'free_game') {
-        fsWin += +betResponse.win;
+        fsWin += +firstMicroRound.win;
         fsRTP = (fsWin / total_bet) * 100;
       }
       if(betResponse.initialState === 'bonus') {
-        bonusWin += +betResponse.win;
+        bonusWin += +firstMicroRound.win;
         bonusRTP = (bonusWin / total_bet) * 100;
       }
       if(betResponse.initialState === 'idle' || betResponse.initialState === null) {
-        mainWin += +betResponse.win;
+        mainWin += +firstMicroRound.win;
         mainRTP = (mainWin / total_bet) * 100;
       }
 
@@ -165,7 +166,9 @@ export class CollectorService {
           ++buyFeatureCount;
         }
       } else {
-        --numberOfSpins;
+        if(betResponse.microRoundData[0].finalizeRound === true) {
+          --numberOfSpins;
+        }
       }
     }
 
