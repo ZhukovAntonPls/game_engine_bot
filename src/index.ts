@@ -31,10 +31,12 @@ const run = async () => {
       const fsSumRtp = results.reduce((partialSum, threadRtp) => partialSum + threadRtp.freeGameRTP, 0);
       const bonusSumRtp = results.reduce((partialSum, threadRtp) => partialSum + threadRtp.bonusGameRTP, 0);
       const mainSumRtp = results.reduce((partialSum, threadRtp) => partialSum + threadRtp.mainGameRTP, 0);
+      const ruleSumRtp = results.reduce((partialSum, threadRtp) => partialSum + threadRtp.ruleRTP, 0);
       printSuccess(`Total RTP = ${totalSumRtp / +params.threadCount}%`);
       printSuccess(`Main RTP = ${mainSumRtp / +params.threadCount}%`);
       printSuccess(`FS RTP = ${fsSumRtp / +params.threadCount}%`);
       printSuccess(`Bonus RTP = ${bonusSumRtp / +params.threadCount}%`);
+      printSuccess(`Rule RTP = ${ruleSumRtp / +params.threadCount}%`);
     } catch (err) {
       printError(err);
     }

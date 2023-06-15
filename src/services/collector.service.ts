@@ -11,15 +11,18 @@ import { getGrpcClientOptions } from '@playson-dev/grpc-utils/lib/grpc-client-ut
 import { Params } from '../utils/params';
 import { BetResponse } from '@playson-dev/xplatform-game-engine-proto/client/v1/game_engine';
 import promiseRetry from "@playson-dev/promise-retry";
+import { parseXml } from "../utils/xml.utils";
 
 const sessionId = '1';
 const zeroBetStates = ['free_game', 'respin', 'bonus'];
-export type BetResponseExt = BetResponse & { initialState: string };
+export type BetResponseExt = BetResponse & { initialState: string, gameRTP: number | null };
+let gameRtp: number | null = null;
 export interface RTP {
   totalRTP: number;
   mainGameRTP: number;
   freeGameRTP: number;
   bonusGameRTP: number;
+  ruleRTP: number;
 }
 
 export class CollectorService {
@@ -35,11 +38,11 @@ export class CollectorService {
     const buyFeatureValue = this.params.buyFeatureEnabled && (!request || request?.state === 'idle') ? 'true' : 'false';
 
     if (request?.state === 'respin') {
-      return `<client session="${sessionId}" rnd="${1}" command="next"></client>`;
+      return `<client session="${sessionId}" rnd="${1}" show_rtp="true" command="next"></client>`;
     } else if (request?.state === 'bonus') {
-      return `<client session="${sessionId}" rnd="${1}" command="bonus"><action round="0"></action></client>`;
+      return `<client session="${sessionId}" rnd="${1}" show_rtp="true" command="bonus"><action round="0"></action></client>`;
     } else {
-      return `<client session="${sessionId}" rnd="${1}" command="bet"><buy freegame="${buyFeatureValue}"/><bet cash="${this.getBet(
+      return `<client session="${sessionId}" rnd="${1}" show_rtp="true" command="bet"><buy freegame="${buyFeatureValue}"/><bet cash="${this.getBet(
         request,
       )}"></bet></client>`;
     }
@@ -76,10 +79,16 @@ export class CollectorService {
         retry(new Error('Unspecified error in the response of the beta game engine'));
       }
 
+      if(gameRtp == null) {
+        const jsonData = parseXml(betResponse.data);
+        gameRtp = +jsonData.server.rtp
+      }
+
       const initialState = request.state && request.state !== '' ? request.state : null;
       return {
         ...betResponse,
         initialState,
+        gameRTP: gameRtp,
       }
     },
         {
@@ -104,6 +113,7 @@ export class CollectorService {
     let fsRTP = 0;
     let bonusRTP = 0;
     let mainRTP = 0;
+    let ruleRTP = 0;
 
     let numberOfSpins = this.params.microroundCount;
 
@@ -130,6 +140,7 @@ export class CollectorService {
       }
 
       rtp = (total_win / total_bet) * 100;
+      ruleRTP = betResponse.gameRTP || 0;
 
 
       if (this.params.buyFeatureEnabled) {
@@ -164,12 +175,14 @@ export class CollectorService {
     console.log(`Thread: {${threadNumber}} => Main RTP = ${mainRTP}%`);
     console.log(`Thread: {${threadNumber}} => FS RTP = ${fsRTP}%`);
     console.log(`Thread: {${threadNumber}} => Bonus RTP = ${bonusRTP}%`);
+    console.log(`Thread: {${threadNumber}} => Rule RTP = ${ruleRTP}%`);
 
     return {
       totalRTP: rtp,
       mainGameRTP: mainRTP,
       freeGameRTP: fsRTP,
       bonusGameRTP: bonusRTP,
+      ruleRTP: ruleRTP,
     }
   }
 }
